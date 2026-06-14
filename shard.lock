@@ -1,0 +1,18 @@
+version: 2.0
+shards:
+  Quartz:
+    git: https://github.com/yutsuna/quartz.git
+    version: 0.1.0+git.commit.419532c6b159720bf9114670ab1eea0df587c186
+
+  markd:
+    git: https://github.com/icyleaf/markd.git
+    version: 0.5.0
+
+  reply:
+    git: https://github.com/i3oris/reply.git
+    version: 0.3.1+git.commit.13f7eba083f138dd063c68b859c8e315f44fb523
+
+  sanitize:
+    git: https://github.com/straight-shoota/sanitize.git
+    version: 0.1.0+git.commit.75c141b619c77956e88f557149566cd28876398b
+

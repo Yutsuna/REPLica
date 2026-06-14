@@ -1,0 +1,35 @@
+name: REPLica
+version: 0.1.0
+
+authors:
+  - Yutsuna <leo.quinzler@epitech.eu>
+
+targets:
+  REPLica:
+    main: Source/REPLica.cr
+
+dependencies:
+  # crystal compiler dependencies
+  # TODO: add a script that will fetch the dependencies from https://github.com/crystal-lang/crystal/blob/master/shard.yml
+  markd:
+    github: icyleaf/markd
+  reply:
+    github: I3oris/reply
+    commit: 13f7eba083f138dd063c68b859c8e315f44fb523
+  sanitize:
+    github: straight-shoota/sanitize
+    commit: 75c141b619c77956e88f557149566cd28876398b
+
+development_dependencies:
+  # Example host project used to exercise auto-loading and type-aware completion.
+  Quartz:
+    github: yutsuna/quartz
+
+krystal:
+  extra_args:
+    - "--progress"
+    - "--stats"
+
+crystal: ">= 1.20.2"
+
+license: MIT
