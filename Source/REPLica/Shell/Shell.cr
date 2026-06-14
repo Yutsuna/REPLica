@@ -29,14 +29,19 @@ module REPLica
 
     # Boots the interpreter and runs the loop until the user exits/EOF
     #
-    # `bootstrap_path` is the host project directory
+    # `bootstrap_path` is the host project directory or specific file path
     # its `lib/` is added to the search path so the project's shards resolve
     def run ( bootstrap_path : String ) : Nil
-      bridge = boot( bootstrap_path )
-      reader = FReplReader.new( bridge )
-      reader.color = colored?
+      joined_lib    = get_joined_lib( bootstrap_path )
+
+      FLog.info ( "Found #{joined_lib}")
+
+      bridge        = boot( joined_lib )
+      reader        = FReplReader.new( bridge )
+      reader.color  = colored?
 
       greet
+      load_if_file( bridge, bootstrap_path )
       loop_until_exit( bridge, reader )
       farewell
     end
@@ -54,9 +59,9 @@ module REPLica
 
     #--------------------------------------------------------------------------
 
-    private def boot ( bootstrap_path : String ) : FInterpreterBridge
+    private def boot ( project_libs : String ) : FInterpreterBridge
       FLog.step( "Starting REPLica session..." )
-      bridge = FInterpreterBridge.new( File.join( bootstrap_path, "lib" ) )
+      bridge = FInterpreterBridge.new( project_libs )
       FLog.ok( "Interpreter ready." )
       bridge
     end
@@ -93,6 +98,49 @@ module REPLica
 
     private def colored? : Bool
       STDOUT.tty?
+    end
+
+    private def get_joined_lib( bootstrap_path : String ) : String
+      project_libs = [] of String
+      project_libs << File.expand_path( "lib" )
+      project_root = find_project_root( bootstrap_path )
+      project_libs << File.join( project_root, "lib" )
+      project_libs.uniq.join( FCrystalEnv::PATH_DELIMITER )
+    end
+
+    private def load_if_file( bridge : FInterpreterBridge, bootstrap_path : String ) : Nil
+      if File.file?( bootstrap_path )
+        FLog.step( "Loading #{bootstrap_path}..." )
+        relative_path = get_crystal_require_path_format( bootstrap_path )
+        outcome = bridge.eval( %(require "#{relative_path}") )
+        if outcome.ok?
+          FLog.ok( "Loaded #{bootstrap_path}." )
+        else
+          FLog.error( "Failed to load #{bootstrap_path}:\n#{outcome.error}" )
+        end
+      end
+    end
+
+    private def get_crystal_require_path_format( bootstrap_path : String ) : String
+      absolute_path = File.expand_path( bootstrap_path )
+      relative_path = Path[absolute_path].relative_to( Dir.current ).to_s
+      relative_path = "./" + relative_path unless relative_path.starts_with?( '.' )
+      relative_path
+    end
+
+    private def find_project_root( path : String ) : String
+      current = File.expand_path( path )
+      current = File.dirname( current ) unless File.directory?( current )
+
+      while current != "/"
+        if Dir.exists?( File.join( current, "lib" ) ) || File.exists?( File.join( current, "shard.yml" ) )
+          return current
+        end
+        parent = File.dirname( current )
+        break if parent == current
+        current = parent
+      end
+      File.directory?( path ) ? path : File.dirname( path )
     end
 
   end

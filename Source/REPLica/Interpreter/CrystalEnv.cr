@@ -31,7 +31,11 @@ module REPLica
     def configure ( project_lib : String? = nil ) : Nil
       base  = stdlib_path
       parts = [] of String
-      parts << project_lib if project_lib && Dir.exists?( project_lib )
+      if project_lib
+        project_lib.split( PATH_DELIMITER ).each do |path|
+          parts << path if !path.blank? && Dir.exists?( path )
+        end
+      end
       parts << base
       ENV["CRYSTAL_PATH"] = parts.join( PATH_DELIMITER )
     end
