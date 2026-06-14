@@ -2,21 +2,25 @@ require "./SpecHelper"
 
 describe REPLica::FInterpreterBridge do
   it "persists local variables across evaluations" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval("x = 40").value.should eq("40")
     bridge.eval("x + 2").value.should eq("42")
   end
 
   it "keeps method definitions available across evaluations" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval("def double( n ); n * 2; end")
     bridge.eval("double(21)").value.should eq("42")
   end
 
   it "keeps multi-line class definitions available across evaluations" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval("class Widget\n  def answer; 42; end\nend")
     bridge.eval("Widget.new.answer").value.should eq("42")
   end
 
   it "renders values through the interpreter's inspect" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval(%(greeting = "hi")).value.should eq(%("hi"))
     bridge.eval("[1, 2, 3]").value.should eq("[1, 2, 3]")
     bridge.eval("nil").value.should eq("nil")
@@ -25,6 +29,7 @@ describe REPLica::FInterpreterBridge do
   end
 
   it "treats blank input as a no-op (no value, no error)" do
+    bridge = REPLica::FInterpreterBridge.new
     outcome = bridge.eval("   ")
     outcome.ok?.should be_true
     outcome.has_value?.should be_false
@@ -32,10 +37,12 @@ describe REPLica::FInterpreterBridge do
   end
 
   it "treats truly empty input as a no-op" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval("").has_value?.should be_false
   end
 
   it "captures a syntax error and keeps the session usable" do
+    bridge = REPLica::FInterpreterBridge.new
     outcome = bridge.eval("1 +")
     outcome.ok?.should be_false
     outcome.error.should_not be_nil
@@ -43,6 +50,7 @@ describe REPLica::FInterpreterBridge do
   end
 
   it "captures a semantic error and keeps the session usable" do
+    bridge = REPLica::FInterpreterBridge.new
     outcome = bridge.eval("definitely_undefined_method_xyz(1)")
     outcome.ok?.should be_false
     outcome.has_value?.should be_false
@@ -50,6 +58,7 @@ describe REPLica::FInterpreterBridge do
   end
 
   it "captures a runtime exception without dying" do
+    bridge = REPLica::FInterpreterBridge.new
     outcome = bridge.eval(%(raise "boom"))
     outcome.ok?.should be_false
     outcome.error.not_nil!.should contain("boom")
@@ -57,22 +66,26 @@ describe REPLica::FInterpreterBridge do
   end
 
   it "resolves the type of a top-level local variable" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval("counter = 123")
     bridge.local_var_type("counter").to_s.should eq("Int32")
     bridge.local_var_names.should contain("counter")
   end
 
   it "reflects a variable's type after reassignment to another type" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.eval("flexible = 1")
     bridge.eval(%(flexible = "now a string"))
     bridge.local_var_type("flexible").to_s.should contain("String")
   end
 
   it "returns nil type for an unknown variable" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.local_var_type("definitely_unknown").should be_nil
   end
 
   it "exposes the live program and the shared interpreter" do
+    bridge = REPLica::FInterpreterBridge.new
     bridge.program.should be_a(Crystal::Program)
     bridge.repl.should be_a(Crystal::Repl)
     bridge.repl.should be(bridge.repl)
