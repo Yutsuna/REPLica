@@ -104,6 +104,33 @@ module REPLica
       [] of String
     end
 
+    # Instance type of an arbitrary receiver expression
+    # resolved by the compiler without executing user code, or `nil` when unresolvable.
+    def infer_type ( receiver : String ) : Crystal::Type?
+      return nil if receiver.blank?
+
+      interpreter.infer_type( receiver )
+    rescue ex
+      FLog.warn( "infer_type(#{receiver}) failed: #{ex.message}" )
+      nil
+    end
+
+    # The top-level type/constant named *name* (e.g. `User`), or `nil` if there is none.
+    def top_level_type ( name : String ) : Crystal::Type?
+      interpreter.program.types[name]?
+    rescue ex
+      FLog.warn( "top_level_type(#{name}) failed: #{ex.message}" )
+      nil
+    end
+
+    # Names of all top-level types/constants, for identifier completion.
+    def top_level_type_names : Array(String)
+      interpreter.program.types.keys
+    rescue ex
+      FLog.warn( "top_level_type_names failed: #{ex.message}" )
+      [] of String
+    end
+
     #--------------------------------------------------------------------------
 
     # The process-wide interpreter. Present after construction; guarded for safety.
