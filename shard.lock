@@ -2,7 +2,7 @@ version: 2.0
 shards:
   Quartz:
     git: https://github.com/yutsuna/quartz.git
-    version: 0.1.0+git.commit.41542883b2a4fc42f5d307d0e6eb6690a1523df7
+    version: 0.1.0+git.commit.a510e2d8291624a19be2a509d9a585b0d9997da9
 
   markd:
     git: https://github.com/icyleaf/markd.git
