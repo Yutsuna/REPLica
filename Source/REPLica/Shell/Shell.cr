@@ -2,6 +2,7 @@ require "../Interpreter/InterpreterBridge"
 require "../Tools/Logger"
 require "./ReplReader"
 require "./ResultRenderer"
+require "./ProjectContext"
 
 
 module REPLica
@@ -32,7 +33,7 @@ module REPLica
     # `bootstrap_path` is the host project directory or specific file path
     # its `lib/` is added to the search path so the project's shards resolve
     def run ( bootstrap_path : String ) : Nil
-      joined_lib    = get_joined_lib( bootstrap_path )
+      joined_lib    = FProjectContext.get_joined_lib( bootstrap_path )
 
       FLog.info ( "Found #{joined_lib}")
 
@@ -100,18 +101,10 @@ module REPLica
       STDOUT.tty?
     end
 
-    private def get_joined_lib( bootstrap_path : String ) : String
-      project_libs = [] of String
-      project_libs << File.expand_path( "lib" )
-      project_root = find_project_root( bootstrap_path )
-      project_libs << File.join( project_root, "lib" )
-      project_libs.uniq.join( FCrystalEnv::PATH_DELIMITER )
-    end
-
     private def load_if_file( bridge : FInterpreterBridge, bootstrap_path : String ) : Nil
       if File.file?( bootstrap_path )
         FLog.step( "Loading #{bootstrap_path}..." )
-        relative_path = get_crystal_require_path_format( bootstrap_path )
+        relative_path = FProjectContext.get_crystal_require_path_format( bootstrap_path )
         outcome = bridge.eval( %(require "#{relative_path}") )
         if outcome.ok?
           FLog.ok( "Loaded #{bootstrap_path}." )
@@ -119,28 +112,6 @@ module REPLica
           FLog.error( "Failed to load #{bootstrap_path}:\n#{outcome.error}" )
         end
       end
-    end
-
-    private def get_crystal_require_path_format( bootstrap_path : String ) : String
-      absolute_path = File.expand_path( bootstrap_path )
-      relative_path = Path[absolute_path].relative_to( Dir.current ).to_s
-      relative_path = "./" + relative_path unless relative_path.starts_with?( '.' )
-      relative_path
-    end
-
-    private def find_project_root( path : String ) : String
-      current = File.expand_path( path )
-      current = File.dirname( current ) unless File.directory?( current )
-
-      while current != "/"
-        if Dir.exists?( File.join( current, "lib" ) ) || File.exists?( File.join( current, "shard.yml" ) )
-          return current
-        end
-        parent = File.dirname( current )
-        break if parent == current
-        current = parent
-      end
-      File.directory?( path ) ? path : File.dirname( path )
     end
 
   end
