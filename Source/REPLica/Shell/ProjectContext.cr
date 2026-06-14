@@ -1,11 +1,19 @@
+require "../Interpreter/CrystalEnv"
+
+
 module REPLica
 
 
+  # Resolves a host project's `lib/` search paths for the interpreter.
   module FProjectContext
+
+    extend self
 
     #--------------------------------------------------------------------------
 
-    def self.get_joined_lib(bootstrap_path : String) : String
+    # `lib/` directories to put on the interpreter's search path: the current
+    # working directory's `lib/` and the resolved project root's `lib/`.
+    def get_joined_lib ( bootstrap_path : String ) : String
       project_libs = [] of String
       project_libs << File.expand_path( "lib" )
       project_root = find_project_root( bootstrap_path )
@@ -13,16 +21,11 @@ module REPLica
       project_libs.uniq.join( FCrystalEnv::PATH_DELIMITER )
     end
 
-    def self.get_crystal_require_path_format(bootstrap_path : String) : String
-      absolute_path = File.expand_path( bootstrap_path )
-      relative_path = Path[absolute_path].relative_to( Dir.current ).to_s
-      relative_path = "./" + relative_path unless relative_path.starts_with?( '.' )
-      relative_path
-    end
-
     #--------------------------------------------------------------------------
 
-    private def self.find_project_root(path : String) : String
+    # Walks up from *path* to the first directory holding a `lib/` or `shard.yml`,
+    # falling back to *path* itself (or its parent) when none is found.
+    private def find_project_root ( path : String ) : String
       current = File.expand_path( path )
       current = File.dirname( current ) unless File.directory?( current )
 
