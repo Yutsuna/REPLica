@@ -1,4 +1,5 @@
 require "../Interpreter/InterpreterBridge"
+require "../Completion/CompletionEngine"
 
 
 module REPLica
@@ -28,6 +29,13 @@ module REPLica
       io << sprintf( "%03d", line_number )
       io << ( @incomplete ? '*' : '>' )
       io << ' '
+    end
+
+    #--------------------------------------------------------------------------
+
+    # Type-aware completion: delegate to the engine, falling back to the inherited completion
+    def auto_complete ( name_filter : String, expression : String ) : {String, Array(String)}
+      FCompletionEngine.complete( @bridge, name_filter, expression ) || super
     end
 
     #--------------------------------------------------------------------------
