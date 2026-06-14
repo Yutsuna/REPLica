@@ -1,5 +1,6 @@
 require "../Interpreter/InterpreterBridge"
 require "../Tools/Logger"
+require "../Scanner/ObjectScanner"
 require "./ReplReader"
 require "./ResultRenderer"
 require "./ProjectContext"
@@ -35,14 +36,14 @@ module REPLica
     def run ( bootstrap_path : String ) : Nil
       joined_lib    = FProjectContext.get_joined_lib( bootstrap_path )
 
-      FLog.info ( "Found #{joined_lib}")
+      FLog.info( "Search path: #{joined_lib}" )
 
       bridge        = boot( joined_lib )
       reader        = FReplReader.new( bridge )
       reader.color  = colored?
 
       greet
-      load_if_file( bridge, bootstrap_path )
+      FObjectScanner.autoload( bridge, bootstrap_path )
       loop_until_exit( bridge, reader )
       farewell
     end
@@ -99,19 +100,6 @@ module REPLica
 
     private def colored? : Bool
       STDOUT.tty?
-    end
-
-    private def load_if_file( bridge : FInterpreterBridge, bootstrap_path : String ) : Nil
-      if File.file?( bootstrap_path )
-        FLog.step( "Loading #{bootstrap_path}..." )
-        relative_path = FProjectContext.get_crystal_require_path_format( bootstrap_path )
-        outcome = bridge.eval( %(require "#{relative_path}") )
-        if outcome.ok?
-          FLog.ok( "Loaded #{bootstrap_path}." )
-        else
-          FLog.error( "Failed to load #{bootstrap_path}:\n#{outcome.error}" )
-        end
-      end
     end
 
   end
