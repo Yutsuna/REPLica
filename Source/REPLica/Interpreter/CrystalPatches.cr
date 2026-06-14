@@ -4,7 +4,7 @@ module Crystal
 
 
   class Repl
-    getter interpreter : Crystal::Interpreter
+    getter interpreter : Crystal::Repl::Interpreter
   end
 
 
