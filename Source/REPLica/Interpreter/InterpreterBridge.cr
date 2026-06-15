@@ -44,6 +44,9 @@ module REPLica
   # The single interpreter is held in the class-level `@@interpreter` and shared by every wrapper
   class FInterpreterBridge
 
+    # Block level of the top-level scope, where the REPL's variables live.
+    TOP_LEVEL_BLOCK = 0
+
     @@interpreter : Crystal::Repl? = nil
 
     #--------------------------------------------------------------------------
@@ -67,30 +70,27 @@ module REPLica
     def eval ( source : String ) : FEvalOutcome
       return FEvalOutcome.new if source.blank?
 
-      result = interpreter.parse_and_interpret( source )
+      result = repl_instance.parse_and_interpret( source )
       FEvalOutcome.new( value: result.value.try( &.to_s ), warnings: collect_warnings( result.warnings ) )
-    rescue ex : Crystal::Repl::EscapingException
-      FEvalOutcome.new( error: describe( ex ) )
-    rescue ex : Crystal::CodeError
-      FEvalOutcome.new( error: describe( ex ) )
     rescue ex : Exception
+      # One arm covers every failure mode — compile/semantic errors
+      # (`Crystal::CodeError`), uncaught interpreted exceptions
+      # (`Crystal::Repl::EscapingException`) and anything else — because the UI
+      # treats them identically: show the message, keep the session alive.
       FEvalOutcome.new( error: describe( ex ) )
     end
 
     #--------------------------------------------------------------------------
 
-    # The live semantic program, used by the completion engine to resolve types.
-    def program : Crystal::Program
-      interpreter.program
-    end
-
+    # The shared interpreter, needed by `FReplReader` to seed the inherited
+    # reader (parser context, highlighting, multi-line detection).
     def repl : Crystal::Repl
-      interpreter
+      repl_instance
     end
 
     # Compile-time type of a top-level local variable, or `nil` if unknown.
     def local_var_type ( name : String ) : Crystal::Type?
-      interpreter.interpreter.local_vars.type?( name, 0 )
+      low_level.local_vars.type?( name, TOP_LEVEL_BLOCK )
     rescue ex
       FLog.warn( "local_var_type(#{name}) failed: #{ex.message}" )
       nil
@@ -98,7 +98,7 @@ module REPLica
 
     # Names of the local variables currently in scope at the top level.
     def local_var_names : Array(String)
-      interpreter.interpreter.local_vars.names_at_block_level_zero.to_a
+      low_level.local_vars.names_at_block_level_zero.to_a
     rescue ex
       FLog.warn( "local_var_names failed: #{ex.message}" )
       [] of String
@@ -106,10 +106,14 @@ module REPLica
 
     # Instance type of an arbitrary receiver expression
     # resolved by the compiler without executing user code, or `nil` when unresolvable.
+    #
+    # Expected typing failures surface as `nil` from the patch; an *unexpected*
+    # exception (e.g. a compiler-API drift) propagates to here and is logged, so
+    # a real bug is never silently mistaken for "type unknown".
     def infer_type ( receiver : String ) : Crystal::Type?
       return nil if receiver.blank?
 
-      interpreter.infer_type( receiver )
+      repl_instance.infer_type( receiver )
     rescue ex
       FLog.warn( "infer_type(#{receiver}) failed: #{ex.message}" )
       nil
@@ -117,7 +121,7 @@ module REPLica
 
     # The top-level type/constant named *name* (e.g. `User`), or `nil` if there is none.
     def top_level_type ( name : String ) : Crystal::Type?
-      interpreter.program.types[name]?
+      repl_instance.program.types[name]?
     rescue ex
       FLog.warn( "top_level_type(#{name}) failed: #{ex.message}" )
       nil
@@ -125,7 +129,7 @@ module REPLica
 
     # Names of all top-level types/constants, for identifier completion.
     def top_level_type_names : Array(String)
-      interpreter.program.types.keys
+      repl_instance.program.types.keys
     rescue ex
       FLog.warn( "top_level_type_names failed: #{ex.message}" )
       [] of String
@@ -134,11 +138,17 @@ module REPLica
     #--------------------------------------------------------------------------
 
     # The process-wide interpreter. Present after construction; guarded for safety.
-    private def interpreter : Crystal::Repl
+    private def repl_instance : Crystal::Repl
       @@interpreter || raise FReplError.new( "interpreter accessed before initialization" )
     end
 
+    # The low-level interpreter that owns the live local-variable table.
+    private def low_level : Crystal::Repl::Interpreter
+      repl_instance.interpreter
+    end
+
     # Renders any non-fatal warnings attached to a result to a single string, or `nil`.
+    # Best-effort: a rendering failure must never turn a successful eval into an error.
     private def collect_warnings ( warnings : Crystal::WarningCollection ) : String?
       io = IO::Memory.new
       warnings.report( io )
