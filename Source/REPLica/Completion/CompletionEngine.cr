@@ -8,10 +8,11 @@ module REPLica
 
   # Orchestrates type-aware autocompletion:
   #
-  # |-> Classifies the context
-  # |-> resolve the receiver's type throught the cheapest safe path
-  # |-> return ranked candidates
+  # |-> classifies the context
+  # |-> resolves the receiver's methods through the cheapest safe path
+  # |-> returns ranked candidates
   #
+  # Pure string orchestration: every `Crystal::Type` stays behind `FTypeIntrospector`.
   # Returns `nil` when nothing type-aware applies, so the reader can fall back to its
   # inherited keyword completion.
   module FCompletionEngine
@@ -37,37 +38,27 @@ module REPLica
     #--------------------------------------------------------------------------
 
     # Methods of the receiver's type. A constant naming a type yields its class
-    # methods; every value (local var, chained expression, value constant) yields
-    # instance methods. `nil` when the type cannot be resolved.
+    # methods; a value (local var, value constant, chained expression) yields
+    # instance methods. `nil` when the receiver is empty or its type is unresolvable.
     private def member_candidates ( bridge : FInterpreterBridge, context : FContextParser::Context ) : Array(String)?
+      return nil if context.receiver.empty?
+
       if context.kind.constant?
-        if type = bridge.top_level_type( context.receiver )
-          return FTypeIntrospector.class_methods( type )
-        end
+        names = FTypeIntrospector.class_method_names( bridge, context.receiver )
+        return names if names
       end
 
-      type = resolve_value_type( bridge, context )
-      type.nil? ? nil : FTypeIntrospector.instance_methods( type )
-    end
-
-    # Resolves the receiver as a *value*: a local variable directly, otherwise via the
-    # compiler's side-effect-free type inference.
-    private def resolve_value_type ( bridge : FInterpreterBridge, context : FContextParser::Context ) : Crystal::Type?
-      if context.kind.local?
-        bridge.local_var_type( context.receiver ) || bridge.infer_type( context.receiver )
-      else
-        bridge.infer_type( context.receiver )
-      end
+      FTypeIntrospector.instance_method_names( bridge, context.receiver, context.kind.local? )
     end
 
     private def identifier_candidates ( bridge : FInterpreterBridge ) : Array(String)
       ( bridge.local_var_names + bridge.top_level_type_names ).uniq
     end
 
+    # Keeps only the candidates the partial name prefixes, always sorted.
     private def filter ( names : Array(String), name_filter : String ) : Array(String)
-      return names.sort if name_filter.empty?
-
-      names.select( &.starts_with?( name_filter ) ).sort
+      selected = name_filter.empty? ? names : names.select( &.starts_with?( name_filter ) )
+      selected.sort
     end
 
   end
