@@ -4,12 +4,6 @@ module Crystal
 
 
   # Flags whether an AST contains any macro construct.
-  #
-  # Macro expansion is the ONE part of semantic analysis that runs arbitrary
-  # code at type-check time (`{{ system(...) }}`, `{{ run(...) }}`,
-  # `{{ read_file(...) }}`). REPLica must never expand a macro while merely
-  # completing a receiver, so `Repl#infer_type` refuses any expression whose
-  # parse tree carries a macro node.
   class FReplMacroGuard < Visitor
 
     getter macro_present : Bool = false
