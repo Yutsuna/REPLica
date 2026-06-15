@@ -2,7 +2,11 @@ version: 2.0
 shards:
   Quartz:
     git: https://github.com/yutsuna/quartz.git
-    version: 0.1.0+git.commit.a510e2d8291624a19be2a509d9a585b0d9997da9
+    version: 0.1.0+git.commit.75b9340a04642507231f7cc39eb1bbbcc23c35df
+
+  db:
+    git: https://github.com/crystal-lang/crystal-db.git
+    version: 0.14.0
 
   markd:
     git: https://github.com/icyleaf/markd.git
@@ -15,4 +19,8 @@ shards:
   sanitize:
     git: https://github.com/straight-shoota/sanitize.git
     version: 0.1.0+git.commit.75c141b619c77956e88f557149566cd28876398b
+
+  sqlite3:
+    git: https://github.com/crystal-lang/crystal-sqlite3.git
+    version: 0.23.0
 
