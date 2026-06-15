@@ -16,8 +16,8 @@ module REPLica
     #--------------------------------------------------------------------------
 
     # `bridge` is the interpreter wrapper: its `repl` provides the parser context the
-    # inherited hooks need (multi-line detection, highlighting), and Phase 5's
-    # `auto_complete` override will query it for type-aware completion.
+    # inherited hooks need (multi-line detection, highlighting), and the
+    # `auto_complete` override queries it for type-aware completion.
     def initialize ( @bridge : FInterpreterBridge )
       super( @bridge.repl )
     end
@@ -41,7 +41,7 @@ module REPLica
     #--------------------------------------------------------------------------
 
     # Persist history under the user's home directory
-    # `nil` disables persistence (and,upstream, reverse i-search) when no home is resolvable.
+    # `nil` disables persistence (and, upstream, reverse i-search) when no home is resolvable.
     def history_file : String?
       home = ENV["HOME"]?
       return nil if home.nil? || home.empty?
@@ -60,7 +60,7 @@ module REPLica
       else
         File.open( path, "w", perm: File::Permissions.new( HISTORY_FILE_PERM ) ) { }
       end
-    rescue
+    rescue ex : File::Error | IO::Error
       # Non-fatal: history may simply not persist this session.
     end
 
