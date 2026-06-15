@@ -33,17 +33,16 @@ module REPLica
     #
     # `bootstrap_path` is the host project directory or specific file path
     # its `lib/` is added to the search path so the project's shards resolve
-    def run ( bootstrap_path : String ) : Nil
-      joined_lib    = FProjectContext.get_joined_lib( bootstrap_path )
-
-      FLog.info( "Search path: #{joined_lib}" )
+    def run ( bootstrap_path : String? ) : Nil
+      joined_lib = bootstrap_path ? FProjectContext.get_joined_lib( bootstrap_path ) : nil
+      FLog.info( "Search path: #{joined_lib}" ) if joined_lib
 
       bridge        = boot( joined_lib )
       reader        = FReplReader.new( bridge )
       reader.color  = colored?
 
       greet
-      FObjectScanner.autoload( bridge, bootstrap_path )
+      FObjectScanner.autoload( bridge, bootstrap_path ) if bootstrap_path
       loop_until_exit( bridge, reader )
       farewell
     end
@@ -61,7 +60,7 @@ module REPLica
 
     #--------------------------------------------------------------------------
 
-    private def boot ( project_libs : String ) : FInterpreterBridge
+    private def boot ( project_libs : String? ) : FInterpreterBridge
       FLog.step( "Starting REPLica session..." )
       bridge = FInterpreterBridge.new( project_libs )
       FLog.ok( "Interpreter ready." )
