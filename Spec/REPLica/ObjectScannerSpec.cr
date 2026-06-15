@@ -1,5 +1,4 @@
-require "./SpecHelper"
-require "../Source/REPLica/Scanner/ObjectScanner"
+require "../../Source/REPLica/Scanner/ObjectScanner"
 
 describe REPLica::FObjectScanner do
   describe ".entrypoint_for" do

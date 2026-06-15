@@ -1,1 +1,2 @@
-require "./**"
+require "./SpecHelper"
+require "./REPLica/**"

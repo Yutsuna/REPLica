@@ -1,5 +1,4 @@
-require "./SpecHelper"
-require "../Source/REPLica/Scanner/ShardReader"
+require "../../Source/REPLica/Scanner/ShardReader"
 
 describe REPLica::FShardReader do
   it "resolves the entry-point from targets.<name>.main in shard.yml" do

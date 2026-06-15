@@ -1,5 +1,3 @@
-require "./SpecHelper"
-
 describe REPLica::FInterpreterBridge do
   it "persists local variables across evaluations" do
     bridge = REPLica::FInterpreterBridge.new
@@ -84,9 +82,8 @@ describe REPLica::FInterpreterBridge do
     bridge.local_var_type("definitely_unknown").should be_nil
   end
 
-  it "exposes the live program and the shared interpreter" do
+  it "exposes the shared interpreter as the single seam for the reader" do
     bridge = REPLica::FInterpreterBridge.new
-    bridge.program.should be_a(Crystal::Program)
     bridge.repl.should be_a(Crystal::Repl)
     bridge.repl.should be(bridge.repl)
   end

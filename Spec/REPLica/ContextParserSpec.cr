@@ -1,5 +1,4 @@
-require "./SpecHelper"
-require "../Source/REPLica/Completion/ContextParser"
+require "../../Source/REPLica/Completion/ContextParser"
 
 describe REPLica::FContextParser do
   it "treats a trailing dot as member access on a local variable" do
@@ -29,6 +28,16 @@ describe REPLica::FContextParser do
 
   it "classifies a literal receiver as complex" do
     REPLica::FContextParser.classify( "[1, 2, 3]." ).kind.complex?.should be_true
+  end
+
+  it "classifies a method call on a namespaced constant as complex" do
+    context = REPLica::FContextParser.classify( "Foo::Bar.baz." )
+    context.receiver.should eq( "Foo::Bar.baz" )
+    context.kind.complex?.should be_true
+  end
+
+  it "classifies a generic type literal as complex" do
+    REPLica::FContextParser.classify( "Hash(String, Int32)." ).kind.complex?.should be_true
   end
 
   it "recognises predicate/bang identifiers as locals" do
